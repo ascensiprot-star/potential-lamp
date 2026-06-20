@@ -1,0 +1,107 @@
+{
+    "name": "AutomationRule",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string"
+        },
+        "description": {
+            "type": "string"
+        },
+        "is_active": {
+            "type": "boolean",
+            "default": true
+        },
+        "trigger_event": {
+            "type": "string",
+            "enum": [
+                "booking.created",
+                "booking.confirmed",
+                "booking.cancelled",
+                "booking.completed",
+                "booking.no_show",
+                "provider.approved",
+                "provider.rejected",
+                "provider.suspended",
+                "review.created",
+                "payment.received",
+                "booking.overdue",
+                "provider.low_rating"
+            ]
+        },
+        "conditions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "field": {
+                        "type": "string"
+                    },
+                    "operator": {
+                        "type": "string",
+                        "enum": [
+                            "eq",
+                            "neq",
+                            "gt",
+                            "lt",
+                            "gte",
+                            "lte",
+                            "contains",
+                            "not_contains"
+                        ]
+                    },
+                    "value": {}
+                }
+            }
+        },
+        "actions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "send_email",
+                            "send_notification",
+                            "update_booking_status",
+                            "update_provider_status",
+                            "create_invoice",
+                            "tag_resource",
+                            "log_event",
+                            "webhook_call"
+                        ]
+                    },
+                    "config": {
+                        "type": "object"
+                    }
+                }
+            }
+        },
+        "run_count": {
+            "type": "number",
+            "default": 0
+        },
+        "last_run_at": {
+            "type": "string"
+        },
+        "priority": {
+            "type": "number",
+            "default": 50
+        },
+        "scope": {
+            "type": "string",
+            "enum": [
+                "global",
+                "provider",
+                "customer"
+            ],
+            "default": "global"
+        }
+    },
+    "required": [
+        "name",
+        "trigger_event",
+        "actions"
+    ]
+}

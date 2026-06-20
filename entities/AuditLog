@@ -1,0 +1,68 @@
+{
+    "name": "AuditLog",
+    "type": "object",
+    "properties": {
+        "actor_email": {
+            "type": "string"
+        },
+        "actor_role": {
+            "type": "string",
+            "enum": [
+                "customer",
+                "provider",
+                "admin",
+                "system",
+                "automation"
+            ]
+        },
+        "action": {
+            "type": "string"
+        },
+        "resource_type": {
+            "type": "string"
+        },
+        "resource_id": {
+            "type": "string"
+        },
+        "previous_state": {
+            "type": "object"
+        },
+        "new_state": {
+            "type": "object"
+        },
+        "metadata": {
+            "type": "object"
+        },
+        "ip_address": {
+            "type": "string"
+        },
+        "session_id": {
+            "type": "string"
+        },
+        "correlation_id": {
+            "type": "string"
+        },
+        "severity": {
+            "type": "string",
+            "enum": [
+                "debug",
+                "info",
+                "warn",
+                "error",
+                "critical"
+            ],
+            "default": "info"
+        },
+        "tags": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        }
+    },
+    "required": [
+        "actor_email",
+        "action",
+        "resource_type"
+    ]
+}

@@ -1,0 +1,89 @@
+{
+    "name": "ServiceBundle",
+    "type": "object",
+    "properties": {
+        "title": {
+            "type": "string"
+        },
+        "description": {
+            "type": "string"
+        },
+        "category_slug": {
+            "type": "string"
+        },
+        "service_name": {
+            "type": "string"
+        },
+        "zone_name": {
+            "type": "string",
+            "description": "Neighborhood/area name"
+        },
+        "address_hint": {
+            "type": "string",
+            "description": "General area, e.g. 'Oak Street Area'"
+        },
+        "organizer_email": {
+            "type": "string"
+        },
+        "participant_emails": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "max_participants": {
+            "type": "number",
+            "default": 5
+        },
+        "current_participants": {
+            "type": "number",
+            "default": 1
+        },
+        "base_price": {
+            "type": "number"
+        },
+        "discount_percentage": {
+            "type": "number",
+            "default": 20
+        },
+        "discounted_price": {
+            "type": "number"
+        },
+        "status": {
+            "type": "string",
+            "enum": [
+                "forming",
+                "confirmed",
+                "active",
+                "completed",
+                "cancelled"
+            ],
+            "default": "forming"
+        },
+        "scheduled_date": {
+            "type": "string",
+            "format": "date"
+        },
+        "deadline_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Join-by deadline"
+        },
+        "provider_id": {
+            "type": "string",
+            "description": "Assigned provider once confirmed"
+        },
+        "provider_name": {
+            "type": "string"
+        },
+        "notes": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "title",
+        "category_slug",
+        "zone_name",
+        "max_participants"
+    ]
+}

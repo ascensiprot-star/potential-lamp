@@ -1,0 +1,83 @@
+{
+    "name": "RideShare",
+    "type": "object",
+    "properties": {
+        "driver_email": {
+            "type": "string"
+        },
+        "driver_name": {
+            "type": "string"
+        },
+        "type": {
+            "type": "string",
+            "enum": [
+                "carpool",
+                "delivery",
+                "moving",
+                "car_rental"
+            ],
+            "default": "carpool"
+        },
+        "from_location": {
+            "type": "string"
+        },
+        "to_location": {
+            "type": "string"
+        },
+        "date": {
+            "type": "string",
+            "format": "date"
+        },
+        "departure_time": {
+            "type": "string"
+        },
+        "seats_available": {
+            "type": "number",
+            "default": 3
+        },
+        "seats_taken": {
+            "type": "number",
+            "default": 0
+        },
+        "price_per_seat": {
+            "type": "number",
+            "default": 0
+        },
+        "vehicle": {
+            "type": "string"
+        },
+        "description": {
+            "type": "string"
+        },
+        "status": {
+            "type": "string",
+            "enum": [
+                "open",
+                "full",
+                "cancelled",
+                "completed"
+            ],
+            "default": "open"
+        },
+        "recurring": {
+            "type": "boolean",
+            "default": false
+        },
+        "recurring_days": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "contact_phone": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "driver_email",
+        "type",
+        "from_location",
+        "to_location",
+        "date"
+    ]
+}

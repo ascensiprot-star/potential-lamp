@@ -1,0 +1,22 @@
+{
+    "name": "PlatformSetting",
+    "type": "object",
+    "properties": {
+        "key": {
+            "type": "string",
+            "description": "Unique config key"
+        },
+        "value": {
+            "type": "string",
+            "description": "Config value as string"
+        },
+        "section": {
+            "type": "string",
+            "description": "Config section: platform, ai, pricing, providers, notifications"
+        }
+    },
+    "required": [
+        "key",
+        "value"
+    ]
+}

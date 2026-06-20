@@ -1,0 +1,45 @@
+{
+    "name": "ProviderSchedule",
+    "type": "object",
+    "properties": {
+        "provider_id": {
+            "type": "string"
+        },
+        "type": {
+            "type": "string",
+            "enum": [
+                "blackout",
+                "vacation",
+                "special_hours"
+            ],
+            "default": "blackout"
+        },
+        "date": {
+            "type": "string",
+            "description": "YYYY-MM-DD for single date"
+        },
+        "end_date": {
+            "type": "string",
+            "description": "YYYY-MM-DD for range end (vacation mode)"
+        },
+        "reason": {
+            "type": "string"
+        },
+        "notes": {
+            "type": "string"
+        },
+        "custom_open": {
+            "type": "string",
+            "description": "For special_hours type: opening time HH:MM"
+        },
+        "custom_close": {
+            "type": "string",
+            "description": "For special_hours type: closing time HH:MM"
+        }
+    },
+    "required": [
+        "provider_id",
+        "type",
+        "date"
+    ]
+}

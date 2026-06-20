@@ -1,0 +1,57 @@
+{
+    "name": "Service",
+    "type": "object",
+    "properties": {
+        "provider_id": {
+            "type": "string"
+        },
+        "name": {
+            "type": "string"
+        },
+        "description": {
+            "type": "string"
+        },
+        "category_slug": {
+            "type": "string"
+        },
+        "type": {
+            "type": "string",
+            "enum": [
+                "appointment",
+                "slot",
+                "pickup",
+                "reservation",
+                "on_demand"
+            ],
+            "default": "appointment"
+        },
+        "price": {
+            "type": "number"
+        },
+        "currency": {
+            "type": "string",
+            "default": "USD"
+        },
+        "duration_minutes": {
+            "type": "number",
+            "default": 30
+        },
+        "is_active": {
+            "type": "boolean",
+            "default": true
+        },
+        "image_url": {
+            "type": "string"
+        },
+        "max_bookings_per_slot": {
+            "type": "number",
+            "default": 1
+        }
+    },
+    "required": [
+        "provider_id",
+        "name",
+        "category_slug",
+        "price"
+    ]
+}

@@ -1,0 +1,71 @@
+{
+    "name": "NeighborhoodZone",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "e.g. Maple Heights, Downtown Core"
+        },
+        "city": {
+            "type": "string"
+        },
+        "zip_codes": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "active_providers_count": {
+            "type": "number",
+            "default": 0
+        },
+        "open_requests_count": {
+            "type": "number",
+            "default": 0
+        },
+        "demand_score": {
+            "type": "number",
+            "default": 0,
+            "description": "0-100 computed demand level"
+        },
+        "supply_score": {
+            "type": "number",
+            "default": 0,
+            "description": "0-100 computed supply level"
+        },
+        "trending_categories": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "service_gaps": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "Categories with unmet demand"
+        },
+        "avg_response_minutes": {
+            "type": "number",
+            "default": 30
+        },
+        "weekly_bookings": {
+            "type": "number",
+            "default": 0
+        },
+        "lat_center": {
+            "type": "number"
+        },
+        "lng_center": {
+            "type": "number"
+        },
+        "population_estimate": {
+            "type": "number"
+        }
+    },
+    "required": [
+        "name",
+        "city"
+    ]
+}

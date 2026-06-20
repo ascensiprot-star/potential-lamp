@@ -1,0 +1,41 @@
+{
+    "name": "ChatMessage",
+    "type": "object",
+    "properties": {
+        "booking_id": {
+            "type": "string",
+            "description": "Associated booking"
+        },
+        "provider_id": {
+            "type": "string"
+        },
+        "customer_email": {
+            "type": "string"
+        },
+        "sender_email": {
+            "type": "string",
+            "description": "Who sent this message"
+        },
+        "sender_role": {
+            "type": "string",
+            "enum": [
+                "customer",
+                "provider"
+            ]
+        },
+        "text": {
+            "type": "string"
+        },
+        "is_read": {
+            "type": "boolean",
+            "default": false
+        }
+    },
+    "required": [
+        "provider_id",
+        "customer_email",
+        "sender_email",
+        "sender_role",
+        "text"
+    ]
+}

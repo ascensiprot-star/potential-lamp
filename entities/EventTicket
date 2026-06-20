@@ -1,0 +1,47 @@
+{
+    "name": "EventTicket",
+    "type": "object",
+    "properties": {
+        "event_id": {
+            "type": "string"
+        },
+        "event_title": {
+            "type": "string"
+        },
+        "buyer_email": {
+            "type": "string"
+        },
+        "buyer_name": {
+            "type": "string"
+        },
+        "quantity": {
+            "type": "number",
+            "default": 1
+        },
+        "unit_price": {
+            "type": "number",
+            "default": 0
+        },
+        "total_amount": {
+            "type": "number",
+            "default": 0
+        },
+        "status": {
+            "type": "string",
+            "enum": [
+                "active",
+                "used",
+                "cancelled",
+                "refunded"
+            ],
+            "default": "active"
+        },
+        "ticket_code": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "event_id",
+        "buyer_email"
+    ]
+}

@@ -1,0 +1,59 @@
+{
+    "name": "WorkflowEvent",
+    "type": "object",
+    "properties": {
+        "event_type": {
+            "type": "string"
+        },
+        "aggregate_type": {
+            "type": "string"
+        },
+        "aggregate_id": {
+            "type": "string"
+        },
+        "actor_email": {
+            "type": "string"
+        },
+        "payload": {
+            "type": "object"
+        },
+        "correlation_id": {
+            "type": "string"
+        },
+        "causation_id": {
+            "type": "string"
+        },
+        "version": {
+            "type": "number",
+            "default": 1
+        },
+        "processed": {
+            "type": "boolean",
+            "default": false
+        },
+        "processed_at": {
+            "type": "string"
+        },
+        "automation_rules_fired": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "source": {
+            "type": "string",
+            "enum": [
+                "user_action",
+                "automation",
+                "system",
+                "api"
+            ],
+            "default": "user_action"
+        }
+    },
+    "required": [
+        "event_type",
+        "aggregate_type",
+        "aggregate_id"
+    ]
+}

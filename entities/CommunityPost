@@ -1,0 +1,88 @@
+{
+    "name": "CommunityPost",
+    "type": "object",
+    "properties": {
+        "author_email": {
+            "type": "string"
+        },
+        "author_name": {
+            "type": "string"
+        },
+        "type": {
+            "type": "string",
+            "enum": [
+                "announcement",
+                "lost_found",
+                "recommendation",
+                "question",
+                "job",
+                "skill_exchange",
+                "general"
+            ],
+            "default": "general"
+        },
+        "title": {
+            "type": "string"
+        },
+        "body": {
+            "type": "string"
+        },
+        "image_url": {
+            "type": "string"
+        },
+        "tags": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "upvotes": {
+            "type": "number",
+            "default": 0
+        },
+        "reply_count": {
+            "type": "number",
+            "default": 0
+        },
+        "is_resolved": {
+            "type": "boolean",
+            "default": false
+        },
+        "neighborhood": {
+            "type": "string"
+        },
+        "job_type": {
+            "type": "string",
+            "enum": [
+                "full_time",
+                "part_time",
+                "freelance",
+                "gig"
+            ],
+            "description": "For job posts"
+        },
+        "job_salary": {
+            "type": "string"
+        },
+        "skill_offer": {
+            "type": "string",
+            "description": "For skill exchange: what they offer"
+        },
+        "skill_want": {
+            "type": "string",
+            "description": "For skill exchange: what they want in return"
+        },
+        "contact_email": {
+            "type": "string"
+        },
+        "expires_at": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "author_email",
+        "type",
+        "title",
+        "body"
+    ]
+}

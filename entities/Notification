@@ -1,0 +1,79 @@
+{
+    "name": "Notification",
+    "type": "object",
+    "properties": {
+        "recipient_email": {
+            "type": "string"
+        },
+        "recipient_role": {
+            "type": "string",
+            "enum": [
+                "customer",
+                "provider",
+                "admin"
+            ]
+        },
+        "type": {
+            "type": "string",
+            "enum": [
+                "booking_confirmed",
+                "booking_cancelled",
+                "booking_reminder",
+                "new_review",
+                "payment_received",
+                "provider_approved",
+                "provider_rejected",
+                "system_alert",
+                "workflow_completed",
+                "automation_triggered"
+            ]
+        },
+        "title": {
+            "type": "string"
+        },
+        "body": {
+            "type": "string"
+        },
+        "action_url": {
+            "type": "string"
+        },
+        "is_read": {
+            "type": "boolean",
+            "default": false
+        },
+        "priority": {
+            "type": "string",
+            "enum": [
+                "low",
+                "normal",
+                "high",
+                "urgent"
+            ],
+            "default": "normal"
+        },
+        "resource_type": {
+            "type": "string"
+        },
+        "resource_id": {
+            "type": "string"
+        },
+        "source": {
+            "type": "string",
+            "enum": [
+                "system",
+                "automation",
+                "manual"
+            ],
+            "default": "system"
+        },
+        "expires_at": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "recipient_email",
+        "type",
+        "title",
+        "body"
+    ]
+}

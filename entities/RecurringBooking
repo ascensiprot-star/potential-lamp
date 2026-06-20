@@ -1,0 +1,72 @@
+{
+    "name": "RecurringBooking",
+    "type": "object",
+    "properties": {
+        "customer_email": {
+            "type": "string"
+        },
+        "provider_id": {
+            "type": "string"
+        },
+        "service_id": {
+            "type": "string"
+        },
+        "service_name": {
+            "type": "string"
+        },
+        "provider_name": {
+            "type": "string"
+        },
+        "frequency": {
+            "type": "string",
+            "enum": [
+                "weekly",
+                "biweekly",
+                "monthly",
+                "quarterly"
+            ],
+            "default": "monthly"
+        },
+        "day_of_week": {
+            "type": "string",
+            "description": "e.g. monday, tuesday"
+        },
+        "preferred_time": {
+            "type": "string",
+            "description": "HH:MM preferred time slot"
+        },
+        "is_active": {
+            "type": "boolean",
+            "default": true
+        },
+        "next_date": {
+            "type": "string",
+            "format": "date"
+        },
+        "last_completed_date": {
+            "type": "string",
+            "format": "date"
+        },
+        "total_completed": {
+            "type": "number",
+            "default": 0
+        },
+        "total_spent": {
+            "type": "number",
+            "default": 0
+        },
+        "auto_confirm": {
+            "type": "boolean",
+            "default": false
+        },
+        "notes": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "customer_email",
+        "provider_id",
+        "service_id",
+        "frequency"
+    ]
+}

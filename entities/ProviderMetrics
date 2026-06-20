@@ -1,0 +1,69 @@
+{
+    "name": "ProviderMetrics",
+    "type": "object",
+    "properties": {
+        "provider_id": {
+            "type": "string"
+        },
+        "period": {
+            "type": "string",
+            "description": "YYYY-MM for monthly snapshots"
+        },
+        "total_bookings": {
+            "type": "number",
+            "default": 0
+        },
+        "completed_bookings": {
+            "type": "number",
+            "default": 0
+        },
+        "cancelled_bookings": {
+            "type": "number",
+            "default": 0
+        },
+        "no_show_bookings": {
+            "type": "number",
+            "default": 0
+        },
+        "total_revenue": {
+            "type": "number",
+            "default": 0
+        },
+        "average_booking_value": {
+            "type": "number",
+            "default": 0
+        },
+        "completion_rate": {
+            "type": "number",
+            "default": 0
+        },
+        "cancellation_rate": {
+            "type": "number",
+            "default": 0
+        },
+        "average_rating": {
+            "type": "number"
+        },
+        "new_customers": {
+            "type": "number",
+            "default": 0
+        },
+        "returning_customers": {
+            "type": "number",
+            "default": 0
+        },
+        "peak_booking_hour": {
+            "type": "string"
+        },
+        "busiest_day": {
+            "type": "string"
+        },
+        "response_time_minutes": {
+            "type": "number"
+        }
+    },
+    "required": [
+        "provider_id",
+        "period"
+    ]
+}

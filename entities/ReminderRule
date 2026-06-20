@@ -1,0 +1,85 @@
+{
+    "name": "ReminderRule",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string"
+        },
+        "trigger": {
+            "type": "string",
+            "enum": [
+                "after_booking_created",
+                "before_appointment_24h",
+                "before_appointment_1h",
+                "same_day_morning",
+                "after_completion",
+                "on_no_show",
+                "on_cancellation",
+                "payment_due"
+            ]
+        },
+        "offset_hours": {
+            "type": "number",
+            "default": 0,
+            "description": "Negative = hours before event, positive = hours after"
+        },
+        "channels": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "enum": [
+                    "in_app",
+                    "email",
+                    "sms"
+                ]
+            },
+            "default": [
+                "in_app"
+            ]
+        },
+        "title_template": {
+            "type": "string"
+        },
+        "body_template": {
+            "type": "string",
+            "description": "Supports {{service_name}}, {{provider_name}}, {{date}}, {{time_slot}}, {{customer_name}}"
+        },
+        "recipient": {
+            "type": "string",
+            "enum": [
+                "customer",
+                "provider",
+                "both"
+            ],
+            "default": "customer"
+        },
+        "is_active": {
+            "type": "boolean",
+            "default": true
+        },
+        "applies_to_services": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "empty = all services"
+        },
+        "provider_id": {
+            "type": "string",
+            "description": "null = global platform rule"
+        },
+        "run_count": {
+            "type": "number",
+            "default": 0
+        },
+        "last_run_at": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "name",
+        "trigger",
+        "title_template",
+        "body_template"
+    ]
+}

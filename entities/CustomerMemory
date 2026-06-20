@@ -1,0 +1,79 @@
+{
+    "name": "CustomerMemory",
+    "type": "object",
+    "properties": {
+        "customer_email": {
+            "type": "string"
+        },
+        "preferred_providers": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "preferred_categories": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "preferred_time_slots": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "booking_count": {
+            "type": "number",
+            "default": 0
+        },
+        "cancellation_count": {
+            "type": "number",
+            "default": 0
+        },
+        "total_spent": {
+            "type": "number",
+            "default": 0
+        },
+        "average_rating_given": {
+            "type": "number"
+        },
+        "tags": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "notes": {
+            "type": "string"
+        },
+        "lifetime_value": {
+            "type": "number",
+            "default": 0
+        },
+        "risk_score": {
+            "type": "number",
+            "default": 0,
+            "description": "0-100, higher = more likely to cancel/no-show"
+        },
+        "loyalty_tier": {
+            "type": "string",
+            "enum": [
+                "new",
+                "regular",
+                "vip",
+                "champion"
+            ],
+            "default": "new"
+        },
+        "last_booking_at": {
+            "type": "string"
+        },
+        "acquisition_source": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "customer_email"
+    ]
+}

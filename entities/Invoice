@@ -1,0 +1,96 @@
+{
+    "name": "Invoice",
+    "type": "object",
+    "properties": {
+        "invoice_number": {
+            "type": "string"
+        },
+        "booking_id": {
+            "type": "string"
+        },
+        "provider_id": {
+            "type": "string"
+        },
+        "customer_email": {
+            "type": "string"
+        },
+        "provider_email": {
+            "type": "string"
+        },
+        "line_items": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "description": {
+                        "type": "string"
+                    },
+                    "quantity": {
+                        "type": "number"
+                    },
+                    "unit_price": {
+                        "type": "number"
+                    },
+                    "total": {
+                        "type": "number"
+                    }
+                }
+            }
+        },
+        "subtotal": {
+            "type": "number"
+        },
+        "tax_rate": {
+            "type": "number",
+            "default": 0
+        },
+        "tax_amount": {
+            "type": "number",
+            "default": 0
+        },
+        "discount_amount": {
+            "type": "number",
+            "default": 0
+        },
+        "total_amount": {
+            "type": "number"
+        },
+        "currency": {
+            "type": "string",
+            "default": "USD"
+        },
+        "status": {
+            "type": "string",
+            "enum": [
+                "draft",
+                "issued",
+                "paid",
+                "overdue",
+                "void",
+                "refunded"
+            ],
+            "default": "draft"
+        },
+        "due_date": {
+            "type": "string",
+            "format": "date"
+        },
+        "paid_at": {
+            "type": "string"
+        },
+        "payment_method": {
+            "type": "string"
+        },
+        "notes": {
+            "type": "string"
+        },
+        "metadata": {
+            "type": "object"
+        }
+    },
+    "required": [
+        "booking_id",
+        "customer_email",
+        "total_amount"
+    ]
+}

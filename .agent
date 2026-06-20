@@ -1,0 +1,486 @@
+# Truvornex - Neighborhood Operating System
+# AI Agent Configuration File
+
+## PROJECT OVERVIEW
+Truvornex is a production-grade neighborhood operating system serving four roles: customer, provider, admin, and committee member. It handles real money (PKR), bookings, identities, and community governance in a 25km-radius geographic context.
+
+**Core Principle:** The platform is a living geographic snapshot. When a user opens Truvornex, the system instantly knows their exact location, zone, nearby provider counts, available services, and Simon recommendations based on real local supply and demand - everything is real, local, and live.
+
+## TECHNICAL STACK
+
+**Frontend:**
+- React + Vite
+- Tailwind CSS
+- Lucide React icons
+- shadcn/ui components
+- Supabase client for some features
+
+**Backend:**
+- Node.js + Express
+- PostgreSQL with PostGIS extension
+- Simon multi-agent system with OpenRouter AI
+- Session-based authentication
+
+**Database:**
+- PostgreSQL with PostGIS for geospatial queries
+- GIST indexes on all geolocation columns
+- Complex relational schema with users, providers, bookings, wallets
+
+**AI/Intelligence:**
+- Simon multi-agent system (8 specialized agents)
+- OpenRouter API with model routing and fallbacks
+- Server-Sent Events for real-time updates
+- Persistent pattern learning with simon_memory table
+
+## ARCHITECTURE PATTERNS
+
+**File Structure:**
+- `/server/` - Backend Express application
+- `/server/simon/` - Multi-agent intelligence system
+- `/src/` - Frontend React application
+- `/src/components/` - Reusable React components
+- `/src/pages/` - Page-level components
+- `/src/hooks/` - Custom React hooks
+- `/src/lib/` - Utility libraries and contexts
+
+**Naming Conventions:**
+- Backend: camelCase for variables, PascalCase for components
+- Database: snake_case for tables and columns
+- Frontend: PascalCase for components, camelCase for functions
+- API endpoints: kebab-case for paths
+
+**Code Style:**
+- Compact code with minimal nesting
+- Follow existing patterns in codebase
+- Use existing libraries before adding new dependencies
+- Never add/remove comments unless asked
+- Default to writing compact code
+
+## LOCATION INTELLIGENCE SYSTEM
+
+**Core Geographic Features:**
+- PostGIS-powered distance calculations using ST_DWithin
+- 25km default radius with configurable limits (5km-50km)
+- Provider heartbeat system (3-minute intervals, 8-minute timeout)
+- Zone-based geographic segmentation
+- Service radius per provider (default 10km, max 50km)
+
+**Key Location Endpoints:**
+- `POST /api/location/update` - User location detection and zone assignment
+- `POST /api/provider/heartbeat` - Real-time provider tracking
+- `GET /api/providers/nearby` - Live provider counts with location filtering
+- `GET /api/zones/detect` - Zone detection and stats
+- `GET /api/location/realtime/neighborhood` - SSE endpoint for live streaming stats
+- Enhanced `GET /api/search` - Location-aware provider search
+
+**Location Database Schema:**
+- `providers.geolocation` - GEOGRAPHY(POINT, 4326) with GIST index
+- `neighborhood_zones.geolocation` - Zone center points with radius_meters
+- `users.last_lat`, `users.last_lng`, `users.detected_zone_id` - User location tracking
+- `provider_presence` - Real-time heartbeat tracking with geolocation
+- `providers.service_radius_km` - Provider's service area radius
+
+**Geographic Query Pattern:**
+```sql
+-- Always use PostGIS for distance calculations
+ST_DWithin(
+    provider.geolocation,
+    ST_SetSRID(ST_MakePoint($user_lng, $user_lat), 4326)::geography,
+    $radius_meters
+)
+
+-- Provider availability check (user within provider's service radius)
+ST_DWithin(
+    provider.geolocation,
+    ST_SetSRID(ST_MakePoint($user_lng, $user_lat), 4326)::geography,
+    provider.service_radius_km * 1000
+)
+```
+
+## SIMON MULTI-AGENT SYSTEM
+
+**Agent Structure:**
+- Simon Core (Orchestrator) - Complete reasoning loop
+- Analyst Agent - Platform insights, anomaly reports, zone health
+- Fraud Agent - Real-time transaction analysis and pattern detection
+- Demand Agent - 72-hour per-zone forecasting and supply analysis
+- Provider Agent - Multi-dimensional scoring and performance tracking
+- Customer Agent - Behavioral patterns and churn prediction
+- Responder Agent - Emergency dispatch and incident coordination
+- Recommender Agent - Geographic recommendations with constraints
+- Monitor Agent - Proactive background jobs with scheduled tasks
+
+**Simon Configuration:**
+- Model routing with fallback chains (primary → secondary → tertiary)
+- Confidence-based action gating (≥70% for autonomous actions)
+- Tool registry with 10 platform tools
+- Persistent memory with TTL-based expiration
+- Complete audit trail in simon_actions table
+
+**Simon Tools:**
+1. query_platform_stats() - Live platform metrics
+2. get_user_profile(user_id) - Full user context
+3. get_provider_metrics(provider_id) - Provider performance data
+4. flag_transaction(transaction_id, reason, risk_score) - Mark suspicious transactions
+5. freeze_wallet(user_id, reason, confidence) - Freeze pending review (≥85 confidence)
+6. escalate_booking(booking_id, reason) - Move to urgent queue
+7. send_system_notification(user_id, title, body, type) - Platform notifications
+8. write_simon_memory(key, value, ttl_hours) - Persist observations
+9. read_simon_memory(key) - Retrieve past observations
+10. approve_payout(payout_id, risk_score) - Auto-approve low-risk payouts
+
+**Simon Location Awareness:**
+All Simon agents accept `locationContext` parameter:
+```javascript
+{
+  lat: number,
+  lng: number,
+  radius_km: number (default 25),
+  zoneName: string,
+  zoneId: string
+}
+```
+
+**Simon Monitoring Jobs:**
+- Every 5 minutes: Fraud transaction scan
+- Every 10 minutes: Zone supply tracking (NEW)
+- Every 15 minutes: Zone health computation
+- Every 30 minutes: Platform anomaly detection
+- Every 1 hour: Demand forecast updates
+- Every 6 hours: Provider batch scoring
+- Every 24 hours: Customer churn analysis + memory cleanup
+
+## DATABASE SCHEMA HIGHLIGHTS
+
+**Core Tables:**
+- `users` - User accounts with role (customer/provider/admin)
+- `providers` - Provider profiles with geolocation and service_radius_km
+- `provider_presence` - Real-time heartbeat tracking
+- `provider_trust_scores` - Multi-dimensional provider scoring
+- `neighborhood_zones` - Geographic zones with health scores
+- `bookings` - Service bookings with status tracking
+- `wallets` - User wallets with PKR currency
+- `wallet_transactions` - Financial transaction ledger
+- `simon_actions` - Simon autonomous decisions audit trail
+- `simon_memory` - Persistent pattern learning storage
+
+**Important Indexes:**
+- GIST indexes on all geolocation columns for PostGIS performance
+- Index on provider_presence(last_heartbeat DESC) for online status queries
+- Index on provider_presence(is_online) WHERE is_online = true
+- Composite indexes for common query patterns
+
+## SECURITY PATTERNS
+
+**COMPREHENSIVE 12-LAYER SECURITY SYSTEM:**
+- Full security implementation in `server/security.js` with 12 defense layers
+- Security API endpoints in `server/security-routes.js` with Zod validation
+- See `SECURITY_IMPLEMENTATION.md` for complete security documentation
+
+**Authentication (Layer 1):**
+- Session-based authentication with express-session
+- Password hashing with scrypt (ready for argon2id migration)
+- Server-side password policy enforcement (10+ chars, complexity rules)
+- Session fixation prevention with session regeneration
+- Two-layer session expiry (30 min idle, 8 hours absolute)
+- SELECT * forbidden - explicit columns only
+- SESSION_SECRET and TRUST_PASSPORT_SECRET required (no fallbacks)
+
+**Multi-Factor Authentication (Layer 2):**
+- TOTP-based MFA with otplib (stubbed, ready for implementation)
+- 10 single-use backup codes
+- Challenge token flow for post-password MFA
+- MFA enforcement: Admin (always), Provider (financial > PKR 5k), Customer (optional)
+
+**Account Lockout (Layer 3):**
+- Progressive lockout: 3 attempts (5 min), 5 attempts (30 min), 8 attempts (24 hours), 12 attempts (permanent)
+- Timing attack prevention (constant-time responses)
+- Security events logging for all anomalies
+
+**Device Fingerprinting (Layer 4):**
+- Device fingerprint from user_agent + accept_language + ip_subnet/24
+- New device detection and email alerts
+- Impossible travel detection (>1000km in <60 min)
+- Geo IP lookup with caching (24-hour TTL)
+
+**Financial Security (Layer 5):**
+- Transaction PIN system (6-digit, separate from login password)
+- Account age limits: <24h (PKR 1k/day), <7d (PKR 5k/day), <30d (PKR 25k/day), verified (PKR 100k/day)
+- Transfer velocity limits: 3/hour, 10/day
+- New recipient holds (10-minute cancellation window)
+- Transaction holds with background job release
+
+**Session Security (Layer 6):**
+- SameSite=Strict, httpOnly, secure cookies
+- Session binding to IP and User-Agent
+- Session listing and remote logout endpoints
+
+**HTTP Security Headers (Layer 7):**
+- Comprehensive security headers (manual, ready for helmet)
+- CSP, HSTS, X-Frame-Options, X-XSS-Protection, etc.
+
+**Input Validation (Layer 8):**
+- Zod validation middleware on all security endpoints
+- Per-route size limits: auth (10kb), simon (50kb), security (10kb), api (100kb)
+- SQL injection audit - all queries use parameterized statements
+- Fixed 1 SQL injection vulnerability in realtime endpoint
+
+**Email Verification & Recovery (Layer 9):**
+- Email verification required before financial actions
+- Secure password reset flow with timing attack prevention
+- Token hashing (SHA-256) and single-use enforcement
+
+**Admin Security (Layer 10):**
+- Enhanced requireAdmin with database re-verification
+- IP allowlist for admins (max 5 trusted IPs)
+- Admin sessions with stricter timeouts (2h idle, 4h absolute)
+- Append-only audit logging for all admin actions
+
+**Secrets Management (Layer 11):**
+- Comprehensive startup environment validation (crashes if missing)
+- SESSION_SECRET entropy check (min 64 chars)
+- MFA_ENCRYPTION_KEY format validation (32 bytes hex)
+- Additional required: SMTP_HOST, SMTP_USER, SMTP_PASS
+
+**Security Monitoring (Layer 12):**
+- Security dashboard endpoint (`GET /api/security/dashboard`)
+- Simon fraud agent monitors security_events table
+- Automated alerts on patterns: failed login spikes, lockout spikes, impossible travel, distributed attacks
+- Scheduled job every 5 minutes
+
+**Security Tables (12 new tables):**
+- user_mfa, mfa_challenges, password_history, email_verification_tokens
+- password_reset_tokens, financial_tokens, user_security, transaction_holds
+- security_events, user_devices, admin_ip_allowlist, admin_sessions
+
+**Users Table Security Columns:**
+- failed_login_count, last_failed_login, locked_until, lock_reason
+- email_verified, is_frozen
+
+**Security Endpoints:**
+- MFA: `/api/security/mfa/*` (setup, verify-setup, challenge, complete, backup)
+- PIN: `/api/security/pin/*` (setup, verify)
+- Sessions: `/api/security/sessions` (GET, DELETE)
+- Email: `/api/security/verify-email/:token`, `/api/security/resend-verification`
+- Password: `/api/security/forgot-password`, `/api/security/reset-password`
+- Limits: `/api/security/account-limits`
+- Dashboard: `/api/security/dashboard` (admin only)
+
+**Required Environment Variables:**
+- DATABASE_URL, SESSION_SECRET (64+ chars), TRUST_PASSPORT_SECRET (64+ chars)
+- OPENROUTER_API_KEY, SIMON_SYSTEM_TOKEN, MFA_ENCRYPTION_KEY (64 hex chars)
+- SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS
+
+**Security Principles:**
+- Never store plain-text secrets
+- Never reveal email existence
+- Never trust session role for admin/financial (always re-query DB)
+- Never skip session regeneration
+- Never allow financial action without email verification
+- Never process large transfer without financial token
+- Never expose stack traces or internal paths
+- Never skip security_events logging
+- Never allow admin action without MFA verification
+
+## API PATTERNS
+
+**Endpoint Structure:**
+- `/api/auth/*` - Authentication endpoints
+- `/api/location/*` - Location intelligence endpoints
+- `/api/providers/*` - Provider-related endpoints
+- `/api/simon/*` - Simon AI endpoints
+- `/api/admin/*` - Admin-only endpoints
+- `/api/financial/*` - Financial endpoints (protected)
+
+**Response Patterns:**
+- Success: JSON response with data
+- Error: `{ error: "message" }` in production
+- Streaming: Server-Sent Events for real-time data
+- Pagination: Use limit/offset parameters
+
+**Location-Aware API Calls:**
+```javascript
+// Always pass lat/lng to location-aware endpoints
+fetch(`/api/providers/nearby?lat=${lat}&lng=${lng}&radius_km=25`)
+
+// Search with location context
+fetch(`/api/search?q=${query}&lat=${lat}&lng=${lng}&radius_km=25`)
+```
+
+## FRONTEND PATTERNS
+
+**Component Patterns:**
+- Use shadcn/ui components when available
+- Custom components in `/src/components/`
+- Page components in `/src/pages/`
+- Reusable hooks in `/src/hooks/`
+
+**State Management:**
+- Context providers: ThemeContext, AuthContext, SimonContext
+- Local state with useState/useEffect
+- Custom hooks for complex logic (useGeolocation, usePlatform)
+
+**Location Integration:**
+```javascript
+// Always use useGeolocation hook for location
+const { location, error, loading, permissionDenied } = useGeolocation();
+
+// Location is [lat, lng] array or null
+// Send location to server automatically on acquisition
+// Periodic sync every 5 minutes while active
+```
+
+**Styling:**
+- Tailwind CSS for utility-first styling
+- CSS variables for theming (light/dark mode)
+- Consistent spacing and color patterns
+- Responsive design with mobile-first approach
+
+## TESTING PATTERNS
+
+**Database Testing:**
+- Test PostGIS extension: `SELECT PostGIS_Version();`
+- Test location detection with various coordinates
+- Test provider heartbeat online/offline transitions
+- Test search with different radii (5km, 10km, 25km, 50km)
+
+**API Testing:**
+- Test all location endpoints with valid coordinates
+- Test SSE streaming connection and reconnection
+- Test Simon agent calls with location context
+- Verify distance calculations are accurate
+
+**Frontend Testing:**
+- Test geolocation permission handling
+- Test automatic location sync on app load
+- Test distance badge display on provider cards
+- Test SSE subscription and live stats updates
+- Test search radius slider functionality
+
+## ENVIRONMENT CONFIGURATION
+
+**Required Environment Variables:**
+```
+DATABASE_URL=postgresql://...
+SESSION_SECRET=your_session_secret
+TRUST_PASSPORT_SECRET=your_passport_secret
+OPENROUTER_API_KEY=your_openrouter_key
+SIMON_SYSTEM_TOKEN=your_simon_token
+```
+
+**Database Connection:**
+- Uses connection pooling via pg.Pool
+- Automatic schema initialization on startup
+- PostGIS extension auto-enabled
+
+## DEVELOPMENT WORKFLOW
+
+**Making Changes:**
+1. Read existing code to understand patterns
+2. Follow existing conventions (naming, structure, style)
+3. Test changes before committing
+4. Update documentation if adding features
+
+**Simon Agent Changes:**
+- Update agent to accept locationContext parameter
+- Include location in system prompts and user prompts
+- Use geographic constraints in recommendations
+- Update monitoring jobs for zone-specific tracking
+
+**Location Features:**
+- Always use PostGIS for distance calculations
+- Implement proper GIST indexes for performance
+- Handle location denial gracefully
+- Provide fallbacks when location unavailable
+
+**Frontend Location:**
+- Use useGeolocation hook - never implement custom location logic
+- Send location to server automatically via hook
+- Show clear messaging when location is denied
+- Display distance in km with 1 decimal place
+
+## DEPLOYMENT NOTES
+
+**Database Migration:**
+- PostGIS extension must be available
+- Run initLocationIntelligence() on startup
+- Indexes created automatically
+- Seed data for neighborhood zones
+
+**Simon System:**
+- Simon Monitor jobs start automatically
+- Jobs run at configured intervals
+- Simon actions logged for audit
+- Memory cleanup runs every 24 hours
+
+**Performance Considerations:**
+- PostGIS queries depend on proper GIST indexes
+- SSE preferred over polling for live data
+- Simon AI calls have timeout and fallback logic
+- Connection pooling for database efficiency
+
+## IMPORTANT REMINDERS
+
+**Never Do:**
+- Never use text city matching as location substitute
+- Never cache provider online status more than 60 seconds
+- Never show providers as online if heartbeat > 8 minutes old
+- Never compute distance in JavaScript - use PostGIS
+- Never show counts including providers without recent heartbeats
+- Never skip location detection on app open
+- Never add comments unless asked
+- Never use hardcoded API keys or secrets
+
+**Always Do:**
+- Always use PostGIS for geospatial queries
+- Always require location for location-aware features
+- Always provide clear messaging when location is denied
+- Always use GIST indexes on geolocation columns
+- Always implement proper error handling for location features
+- Always follow existing code patterns and conventions
+- Always test with real GPS coordinates when possible
+- Always use the simon skill for InsForge backend tasks
+
+## SESSION CONTEXT
+
+This project uses InsForge backend-as-a-service with:
+- Project: "My First Project" (API base: https://myff52a5.us-east-insforge.app)
+- Skills: insforge, insforge-cli, insforge-debug, insforge-integrations
+- Credentials: .env.local for app code, .insforge/project.json for CLI
+- Key patterns: Database inserts take arrays, reference users with auth.users(id)
+
+## KEY FILES TO UNDERSTAND
+
+**Backend Core:**
+- `/server/index.js` - Main Express server with all route definitions
+- `/server/db.js` - Database schema, connection pooling, utility functions
+- `/server/location.js` - Location intelligence endpoints (NEW)
+- `/server/simon/index.js` - Multi-agent system exports
+
+**Simon Agents:**
+- `/server/simon/core.js` - Orchestrator with reasoning loop
+- `/server/simon/recommender.js` - Geographic recommendations (NEW)
+- `/server/simon/monitor.js` - Scheduled jobs including zone supply tracking
+- `/server/simon/tools.js` - Tool registry for platform operations
+
+**Frontend Core:**
+- `/src/pages/Home.jsx` - Main landing page with live stats
+- `/src/pages/NearbyProviders.jsx` - Provider search with radius slider
+- `/src/components/ProviderCard.jsx` - Provider cards with location features
+- `/src/hooks/useGeolocation.js` - Location detection with automatic server sync
+
+## RECENT IMPLEMENTATION
+
+**Location Intelligence System (Complete):**
+- PostGIS geospatial foundation
+- Real-time provider heartbeat tracking
+- Location-aware search and recommendations
+- SSE streaming for live neighborhood stats
+- Simon agents with geographic context
+- Frontend location features (distance badges, live stats, radius slider)
+
+All 19 tasks completed for production-ready location awareness across the entire platform.
+
+---
+Generated from comprehensive session implementing Location Intelligence System
+Last updated: 2025-06-19

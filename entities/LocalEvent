@@ -1,0 +1,107 @@
+{
+    "name": "LocalEvent",
+    "type": "object",
+    "properties": {
+        "title": {
+            "type": "string"
+        },
+        "description": {
+            "type": "string"
+        },
+        "category": {
+            "type": "string",
+            "enum": [
+                "concert",
+                "workshop",
+                "meetup",
+                "sports",
+                "festival",
+                "exhibition",
+                "food",
+                "other"
+            ],
+            "default": "meetup"
+        },
+        "venue_name": {
+            "type": "string"
+        },
+        "venue_type": {
+            "type": "string",
+            "enum": [
+                "hall",
+                "rooftop",
+                "open_ground",
+                "indoor",
+                "online",
+                "other"
+            ],
+            "default": "hall"
+        },
+        "address": {
+            "type": "string"
+        },
+        "date": {
+            "type": "string",
+            "format": "date"
+        },
+        "start_time": {
+            "type": "string"
+        },
+        "end_time": {
+            "type": "string"
+        },
+        "organizer_email": {
+            "type": "string"
+        },
+        "organizer_name": {
+            "type": "string"
+        },
+        "image_url": {
+            "type": "string"
+        },
+        "ticket_price": {
+            "type": "number",
+            "default": 0
+        },
+        "is_free": {
+            "type": "boolean",
+            "default": true
+        },
+        "total_tickets": {
+            "type": "number",
+            "default": 100
+        },
+        "tickets_sold": {
+            "type": "number",
+            "default": 0
+        },
+        "status": {
+            "type": "string",
+            "enum": [
+                "draft",
+                "published",
+                "cancelled",
+                "completed"
+            ],
+            "default": "published"
+        },
+        "tags": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "bundle_services": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "e.g. photographer, decorator, caterer"
+        }
+    },
+    "required": [
+        "title",
+        "date",
+        "venue_name"
+    ]
+}
