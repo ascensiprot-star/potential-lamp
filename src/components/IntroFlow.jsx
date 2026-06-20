@@ -38,9 +38,9 @@ const SLIDE_DURATION = 5200; // ms per slide before auto-advance
 // Result: a bold particle sculpture, not a wireframe outline.
 function generateParticles(W, H) {
     // Large, centered logo — unmissable on every screen size
-    const scale = Math.min(W * 0.72, H * 0.62) / 32;
+    const scale = Math.min(W * 0.55, H * 0.42) / 32;
     const ox = W * 0.5;   // always centered horizontally
-    const oy = H * 0.38;  // upper-center vertically
+    const oy = H * 0.26;  // upper-center vertically — kept high so text never overlaps
     const STEP     = 0.34;       // grid spacing in logo-space units
     const HALF_T   = 1.5;        // half-thickness of each line band
 
@@ -166,12 +166,12 @@ function LogoParticles() {
         // Automatic ripples from logo centre — make interactivity unmistakably obvious
         const initRipple = setTimeout(() => {
             const cx = canvas.width  * 0.5;
-            const cy = canvas.height * 0.38;
+            const cy = canvas.height * 0.26;
             state.ripples.push({ x: cx, y: cy, r: 0, maxR: Math.min(canvas.width, canvas.height) * 0.60, str: 14 });
         }, 900);
         const autoRippleId = setInterval(() => {
             const cx = canvas.width  * 0.5;
-            const cy = canvas.height * 0.38;
+            const cy = canvas.height * 0.26;
             state.ripples.push({ x: cx, y: cy, r: 0, maxR: Math.min(canvas.width, canvas.height) * 0.56, str: 10 });
             if (state.ripples.length > 4) state.ripples.shift();
         }, 4000);
@@ -413,7 +413,7 @@ export default function IntroFlow({ onComplete }) {
                 aria-hidden="true"
                 style={{
                     position: 'absolute',
-                    top: '68%', left: '50%', transform: 'translateX(-50%)',
+                    top: '52%', left: '50%', transform: 'translateX(-50%)',
                     zIndex: 8, textAlign: 'center', pointerEvents: 'none',
                     whiteSpace: 'nowrap',
                     animation: 'hintFadeInOut 4.5s ease forwards 1.2s',

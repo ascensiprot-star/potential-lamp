@@ -278,9 +278,9 @@ export async function zoneSupplyTrackingJob() {
                         seven_day_average: sevenDayAverage,
                         recorded_at: new Date().toISOString()
                     },
-                    24, // 24 hour TTL
-                    80, // High confidence for direct DB queries
-                    'monitor'
+                    80,        // confidence: high for direct DB queries
+                    'monitor', // sourceAgent
+                    24         // ttlHours: 24-hour TTL
                 );
                 
                 // Alert if zone has zero providers online
