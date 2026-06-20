@@ -17,13 +17,13 @@ export async function generateDemandForecastByZone(zoneId, categories, hoursAhea
         const { rows: historicalData } = await pool.query(`
             SELECT 
                 DATE_TRUNC('hour', created_at) as hour,
-                category,
+                category_slug AS category,
                 COUNT(*) as demand,
                 COUNT(DISTINCT provider_id) as supply
             FROM bookings
             WHERE zone_id = $1
             AND created_at > NOW() - INTERVAL '7 days'
-            GROUP BY DATE_TRUNC('hour', created_at), category
+            GROUP BY DATE_TRUNC('hour', created_at), category_slug
             ORDER BY hour DESC
         `, [zoneId]);
         
@@ -221,9 +221,9 @@ export async function generatePlatformDemandForecast(hoursAhead = 72, agent = 'd
         
         // Get all categories
         const { rows: categories } = await pool.query(`
-            SELECT DISTINCT category FROM services 
-            WHERE category IS NOT NULL 
-            ORDER BY category
+            SELECT DISTINCT category_slug AS category FROM services 
+            WHERE category_slug IS NOT NULL 
+            ORDER BY category_slug
             LIMIT 10
         `);
         

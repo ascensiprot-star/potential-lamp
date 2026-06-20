@@ -39,7 +39,30 @@ export default function BookService() {
     const handleBook = async () => {
         if (!date || !slot) { toast.error('Please select a date and time'); return; }
         setSubmitting(true);
-        setSuccess(true);
+        try {
+            const scheduledAt = new Date(date);
+            const [h, m] = slot.split(':');
+            scheduledAt.setHours(parseInt(h), parseInt(m), 0, 0);
+            const res = await fetch('/api/bookings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    provider_id:  providerId || null,
+                    service_id:   serviceId || null,
+                    service_name: service?.name || service?.title || 'Service',
+                    category_slug: service?.category_slug || null,
+                    scheduled_at: scheduledAt.toISOString(),
+                    price:        totalPrice || null,
+                    notes:        notes || null,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) { toast.error(data.error || 'Booking failed'); setSubmitting(false); return; }
+            setSuccess(true);
+        } catch (err) {
+            toast.error('Network error — please try again');
+        }
         setSubmitting(false);
     };
 

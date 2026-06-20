@@ -1,0 +1,3 @@
+- [DB table column types](db-type-quirks.md) — provider_presence/provider_trust_scores use TEXT for provider_id; always cast UUID::text when joining against UUID columns
+- [Simon monitor arg order](simon-monitor-args.md) — writeSimonMemory signature is (key, value, confidence, sourceAgent, ttlHours); monitor.js had them reversed causing NaN timestamps
+- [Demand.js column names](demand-column-names.md) — bookings table uses category_slug not category; services table uses category_slug not category

@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "fj5G_FB7LirYEJLUJyBh3"
+uri = "file://RAILWAY.md"
+type = "text"
+title = "Truvornex — Complete Railway Deployment Guide"

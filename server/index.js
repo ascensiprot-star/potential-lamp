@@ -25,6 +25,7 @@ import neighborhoodExtRouter from './neighborhood-ext.js';
 import walletRouter from './wallet.js';
 import locationRouter from './location.js';
 import securityRouter from './security-routes.js';
+import { installTriggers, startRealtimeListeners, handleZoneHeatmapStream, handlePlatformStatsStream, handleBookingStream, handleChatStream } from './realtime.js';
 import {
     hashPassword,
     verifyPassword,
@@ -381,6 +382,18 @@ app.use('/api/committees', requireAuth, committeeRouter);
 app.use('/api/marketplace', requireAuth, marketplaceRouter);
 app.use('/api/neighborhood', requireAuth, neighborhoodExtRouter);
 app.use('/api/location', requireAuth, locationRouter);
+
+// ── Real-time SSE push endpoints (true push, not polling) ────────────────────
+app.get('/api/realtime/zone-heatmap',    handleZoneHeatmapStream);
+app.get('/api/realtime/platform-stats',  handlePlatformStatsStream);
+app.get('/api/realtime/bookings',        (req, res) => {
+    if (!req.session?.user?.id) return res.status(401).json({ error: 'Not authenticated' });
+    handleBookingStream(req, res, req.session.user.id, req.session.user.role);
+});
+app.get('/api/realtime/chat/:threadKey', (req, res) => {
+    if (!req.session?.user?.id) return res.status(401).json({ error: 'Not authenticated' });
+    handleChatStream(req, res, req.session.user.id, req.params.threadKey);
+});
 app.get('/api/care-bridge/meta/rates', (req, res) => {
     res.json({
         base_currency: 'PKR',
@@ -1120,6 +1133,163 @@ app.get('/api/search', async (req, res) => {
     }
 });
 
+/* ── Bookings ───────────────────────────────────────────────────────────────── */
+
+app.get('/api/bookings', requireAuth, async (req, res) => {
+    const userId = req.session.user.id;
+    const role   = req.session.user.role;
+    const col    = role === 'provider' ? 'provider_id' : 'customer_id';
+    try {
+        const { rows } = await pool.query(
+            `SELECT b.*, u.full_name AS provider_name, u.avatar_url AS provider_avatar
+             FROM bookings b
+             LEFT JOIN users u ON u.id = b.provider_id
+             WHERE b.${col} = $1
+             ORDER BY b.created_at DESC LIMIT 50`,
+            [userId]
+        );
+        res.json({ bookings: rows });
+    } catch (err) { serverError(res, err); }
+});
+
+app.post('/api/bookings', requireAuth, async (req, res) => {
+    const { provider_id, service_id, service_name, scheduled_at, price, notes, address, category_slug, zone_id } = req.body;
+    if (!service_name) return res.status(400).json({ error: 'service_name is required' });
+    const customer_id = req.session.user.id;
+    try {
+        const { rows } = await pool.query(
+            `INSERT INTO bookings (customer_id, provider_id, service_id, service_name, category_slug, zone_id, scheduled_at, price, notes, address, status, payment_status)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'pending','pending') RETURNING *`,
+            [customer_id, provider_id || null, service_id || null, service_name, category_slug || null, zone_id || null,
+             scheduled_at || null, price || null, notes || null, address || null]
+        );
+        const booking = rows[0];
+        // Notify provider if known
+        if (provider_id) {
+            createNotification(provider_id, 'booking_request', `New booking request for ${service_name}`, { booking_id: booking.id }).catch(() => {});
+        }
+        await writeAuditLog(customer_id, 'booking_created', 'bookings', booking.id, {}, booking).catch(() => {});
+        res.json({ booking });
+    } catch (err) { serverError(res, err); }
+});
+
+app.patch('/api/bookings/:id/status', requireAuth, async (req, res) => {
+    const { status } = req.body;
+    const allowed = ['confirmed','in_progress','completed','cancelled','disputed'];
+    if (!allowed.includes(status)) return res.status(400).json({ error: 'Invalid status' });
+    try {
+        const { rows } = await pool.query(
+            `UPDATE bookings SET status=$1, updated_at=NOW() WHERE id=$2
+             AND (customer_id=$3 OR provider_id=$3) RETURNING *`,
+            [status, req.params.id, req.session.user.id]
+        );
+        if (!rows.length) return res.status(404).json({ error: 'Not found or no permission' });
+        res.json({ booking: rows[0] });
+    } catch (err) { serverError(res, err); }
+});
+
+/* ── Featured Providers ─────────────────────────────────────────────────────── */
+
+app.get('/api/providers/featured', async (req, res) => {
+    const limit = Math.min(parseInt(req.query.limit) || 8, 20);
+    try {
+        const { rows } = await pool.query(
+            `SELECT p.*, u.full_name, u.avatar_url,
+                    pts.score AS trust_score, pts.tier,
+                    pp.is_online, pp.is_accepting_jobs,
+                    COALESCE((SELECT COUNT(*) FROM reviews r WHERE r.provider_id = p.user_id::text),0) AS review_count,
+                    COALESCE((SELECT AVG(r.rating)  FROM reviews r WHERE r.provider_id = p.user_id::text),0) AS avg_rating
+             FROM providers p
+             LEFT JOIN users u ON u.id = p.user_id
+             LEFT JOIN provider_trust_scores pts ON pts.provider_id::text = p.user_id::text
+             LEFT JOIN provider_presence pp ON pp.provider_id::text = p.user_id::text
+             WHERE p.status = 'approved'
+             ORDER BY pts.score DESC NULLS LAST, p.created_at DESC
+             LIMIT $1`,
+            [limit]
+        );
+        res.json({ providers: rows });
+    } catch (err) { serverError(res, err); }
+});
+
+/* ── Zone Heatmap ───────────────────────────────────────────────────────────── */
+
+app.get('/api/zones/heatmap', async (req, res) => {
+    try {
+        const { rows } = await pool.query(`
+            SELECT
+                nz.id,
+                nz.name,
+                nz.city,
+                COALESCE(nz.health_score, 50)   AS health_score,
+                COALESCE(nz.demand_index, 0)     AS demand_index,
+                (SELECT COUNT(*)::int FROM provider_presence pp
+                 WHERE pp.current_zone_id::text = nz.id::text
+                   AND pp.is_online = true
+                   AND pp.last_heartbeat > NOW() - INTERVAL '10 minutes'
+                ) AS online_providers,
+                (SELECT COUNT(*)::int FROM bookings b
+                 WHERE b.zone_id::text = nz.id::text
+                   AND b.created_at > NOW() - INTERVAL '24 hours'
+                ) AS bookings_24h,
+                (SELECT COUNT(*)::int FROM emergency_requests er
+                 WHERE er.zone_id::text = nz.id::text AND er.status = 'open'
+                ) AS open_emergencies
+            FROM neighborhood_zones nz
+            ORDER BY nz.demand_index DESC, nz.health_score DESC
+            LIMIT 12
+        `);
+        res.json({ zones: rows, updated_at: new Date().toISOString() });
+    } catch (err) { serverError(res, err); }
+});
+
+/* ── Public Platform Stats ──────────────────────────────────────────────────── */
+
+app.get('/api/stats/platform', async (req, res) => {
+    try {
+        const { rows } = await pool.query(`
+            SELECT
+                (SELECT COUNT(*) FROM users WHERE role='provider') AS total_providers,
+                (SELECT COUNT(*) FROM bookings WHERE status='completed')  AS completed_bookings,
+                (SELECT COUNT(*) FROM bookings) AS total_bookings,
+                (SELECT COUNT(*) FROM users)    AS total_users,
+                (SELECT COUNT(*) FROM reviews)  AS total_reviews,
+                (SELECT ROUND(AVG(rating),1) FROM reviews WHERE rating IS NOT NULL) AS avg_rating
+        `);
+        res.json({ stats: rows[0] });
+    } catch (err) { serverError(res, err); }
+});
+
+/* ── Reviews ────────────────────────────────────────────────────────────────── */
+
+app.get('/api/reviews/provider/:providerId', async (req, res) => {
+    try {
+        const { rows } = await pool.query(
+            `SELECT r.*, u.full_name AS customer_name, u.avatar_url AS customer_avatar
+             FROM reviews r LEFT JOIN users u ON u.id = r.customer_id
+             WHERE r.provider_id = $1
+             ORDER BY r.created_at DESC LIMIT 20`,
+            [req.params.providerId]
+        );
+        res.json({ reviews: rows });
+    } catch (err) { serverError(res, err); }
+});
+
+app.post('/api/reviews', requireAuth, async (req, res) => {
+    const { booking_id, provider_id, rating, comment } = req.body;
+    if (!provider_id || !rating) return res.status(400).json({ error: 'provider_id and rating required' });
+    if (rating < 1 || rating > 5) return res.status(400).json({ error: 'rating must be 1-5' });
+    const customer_id = req.session.user.id;
+    try {
+        const { rows } = await pool.query(
+            `INSERT INTO reviews (booking_id, provider_id, customer_id, rating, comment)
+             VALUES ($1,$2,$3,$4,$5) RETURNING *`,
+            [booking_id || null, provider_id, customer_id, rating, comment || null]
+        );
+        res.json({ review: rows[0] });
+    } catch (err) { serverError(res, err); }
+});
+
 /* ── Audit Log (admin only) ─────────────────────────────────────────────────── */
 
 app.get('/api/audit-log', requireAdminAuth, async (req, res) => {
@@ -1825,8 +1995,10 @@ if (isProd) {
     app.use(express.static(distPath));
     app.get(/{*path}/, (req, res) => res.sendFile(path.join(distPath, 'index.html')));
     checkRequiredEnvVars();
-    initDb().then(() => {
+    initDb().then(async () => {
         startScheduledJobs();
+        await installTriggers();
+        await startRealtimeListeners();
         app.listen(PORT, '0.0.0.0', () => console.log(`Truvornex running on port ${PORT}`));
     });
 } else {
@@ -1834,8 +2006,10 @@ if (isProd) {
     const vite = await createViteServer({ server: { middlewareMode: true }, appType: 'spa' });
     app.use(vite.middlewares);
     checkRequiredEnvVars();
-    initDb().then(() => {
+    initDb().then(async () => {
         startScheduledJobs();
+        await installTriggers();
+        await startRealtimeListeners();
         app.listen(PORT, '0.0.0.0', () => console.log(`Truvornex dev server running on port ${PORT}`));
     });
 }

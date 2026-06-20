@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from '@/lib/ThemeContext';
 import { useSimon } from '@/lib/SimonContext';
@@ -6,6 +6,7 @@ import { useAuthModal } from '@/lib/AuthModalContext';
 import { useAuth } from '@/lib/AuthContext';
 import { supabase } from '@/api/supabaseClient';
 import useGeolocation from '@/hooks/useGeolocation';
+import ZoneHeatmap from '@/components/ZoneHeatmap';
 import {
     Search, Sparkles, MapPin, ChevronRight, Star,
     Sparkle, Zap, Wrench, Droplets, ChefHat, Truck,
@@ -417,6 +418,9 @@ export default function Home() {
     const [postDialog, setPostDialog] = useState(false);
     const [postForm, setPostForm] = useState({ type: 'general', title: '', body: '' });
     const [posting, setPosting] = useState(false);
+    const [liveProviders, setLiveProviders] = useState([]);
+    const [liveStats, setLiveStats]         = useState(null);
+    const [quickBookProvider, setQuickBookProvider] = useState(null);
 
     // Load community posts from Supabase
     useEffect(() => {
@@ -454,6 +458,41 @@ export default function Home() {
         }
         setPosting(false);
     };
+
+    // Fetch live providers once on mount
+    useEffect(() => {
+        fetch('/api/providers/featured?limit=8')
+            .then(r => r.json())
+            .then(d => { if (d.providers?.length) setLiveProviders(d.providers); })
+            .catch(() => {});
+    }, []);
+
+    // Platform stats — true SSE push (server sends updates when DB changes)
+    useEffect(() => {
+        let reconnectTimer = null;
+        let es = null;
+
+        function connectStats() {
+            es = new EventSource('/api/realtime/platform-stats');
+            es.addEventListener('platform_stats', (e) => {
+                try {
+                    const d = JSON.parse(e.data);
+                    if (d.stats) setLiveStats(d.stats);
+                } catch (_) {}
+            });
+            es.onerror = () => {
+                es.close();
+                reconnectTimer = setTimeout(connectStats, 8000);
+            };
+        }
+
+        connectStats();
+
+        return () => {
+            clearTimeout(reconnectTimer);
+            es?.close();
+        };
+    }, []);
 
     useEffect(() => { const t = setTimeout(() => setVisible(true), 80); return () => clearTimeout(t); }, []);
 
@@ -618,9 +657,17 @@ export default function Home() {
             {/* ── Live Neighborhood Stats ─────────────────────────────────── */}
             <LiveNeighborhoodStats />
 
+            {/* ── Zone Availability Heatmap ──────────────────────────────── */}
+            <ZoneHeatmap />
+
             {/* ── Stats ─────────────────────────────────────────────────── */}
             <section className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {STATS.map((s, i) => (
+                {(liveStats ? [
+                    { value: liveStats.total_providers ? `${Number(liveStats.total_providers).toLocaleString()}+` : '2,400+', label: 'Verified Providers' },
+                    { value: liveStats.avg_rating ? `${liveStats.avg_rating}★` : '4.9★', label: 'Avg Rating' },
+                    { value: liveStats.completed_bookings ? `${Number(liveStats.completed_bookings).toLocaleString()}+` : '15K+', label: 'Jobs Completed' },
+                    { value: liveStats.total_reviews ? `${Number(liveStats.total_reviews).toLocaleString()}+` : '8K+', label: 'Reviews' },
+                ] : STATS).map((s, i) => (
                     <div key={s.label} className="rounded-xl relative overflow-hidden shimmer"
                         style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', padding: '12px 14px', animation: `fadeInUp 0.45s cubic-bezier(0.19,1,0.22,1) ${i * 0.05}s both`, boxShadow: 'var(--shadow-sm)' }}>
                         <div className="absolute top-0 right-0 w-16 h-16 pointer-events-none"
@@ -912,42 +959,69 @@ export default function Home() {
             <section>
                 <SectionHeader title={`Top-Rated Providers${city ? ` in ${city}` : ''}`} href="/nearby" label="View all" />
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {PROVIDERS.map((p, i) => (
-                        <Link key={p.id} to={`/providers/${p.id}`}
-                            className="rounded-xl overflow-hidden block"
-                            style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', textDecoration: 'none', animation: `fadeInUp 0.45s cubic-bezier(0.19,1,0.22,1) ${i * 0.06}s both`, transition: 'transform 0.24s cubic-bezier(0.25,1,0.5,1), box-shadow 0.24s cubic-bezier(0.25,1,0.5,1), border-color 0.24s', willChange: 'transform' }}
-                            onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-3px)', e.currentTarget.style.boxShadow = 'var(--shadow-card-hover)', e.currentTarget.style.borderColor = 'var(--color-border-strong)')}
-                            onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)',    e.currentTarget.style.boxShadow = 'none',                     e.currentTarget.style.borderColor = 'var(--color-border)')}>
-                            <div className="relative overflow-hidden" style={{ height: 100 }}>
-                                <img src={p.image} alt={p.name}
-                                    className="w-full h-full object-cover transition-all duration-700"
-                                    style={{ filter: 'grayscale(0.35)' }}
-                                    onMouseEnter={e => (e.currentTarget.style.filter = 'grayscale(0)',    e.currentTarget.style.transform = 'scale(1.05)')}
-                                    onMouseLeave={e => (e.currentTarget.style.filter = 'grayscale(0.35)', e.currentTarget.style.transform = 'scale(1)')} />
-                                <div className="absolute inset-0" style={{ background: 'linear-gradient(to top,rgba(0,0,0,0.6) 0%,transparent 55%)' }} />
-                                <span className="absolute top-1.5 left-1.5 text-[9px] font-bold text-white px-1.5 py-0.5 rounded"
-                                    style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                    {p.badge}
-                                </span>
-                                {p.online && <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--color-success)' }} />}
-                            </div>
-                            <div className="p-2.5">
-                                <div className="text-[11px] font-bold mb-0.5" style={{ color: 'var(--color-primary)', letterSpacing: '-0.02em' }}>{p.name}</div>
-                                <div className="text-[10px] mb-1.5" style={{ color: 'var(--color-text-muted)' }}>{p.role}</div>
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-1">
-                                        <Star style={{ width: 9, height: 9, fill: 'var(--color-text-muted)', color: 'var(--color-text-muted)' }} />
-                                        <span className="text-[10px] font-semibold" style={{ color: 'var(--color-text)' }}>{p.rating}</span>
-                                        <span className="text-[9px]" style={{ color: 'var(--color-text-subtle)' }}>({p.reviews})</span>
-                                    </div>
-                                    <div className="flex items-center gap-1 text-[9px]" style={{ color: 'var(--color-text-subtle)' }}>
-                                        <MapPin style={{ width: 8, height: 8 }} />
-                                        <span className="truncate max-w-[56px]">{p.location}</span>
+                    {(liveProviders.length > 0 ? liveProviders : PROVIDERS).map((p, i) => {
+                        const isLive   = liveProviders.length > 0;
+                        const name     = isLive ? (p.full_name || p.business_name || 'Provider') : p.name;
+                        const role     = isLive ? (p.category_slug || 'Service Provider') : p.role;
+                        const rating   = isLive ? (parseFloat(p.avg_rating) || 0).toFixed(1) : p.rating;
+                        const reviews  = isLive ? (p.review_count || 0) : p.reviews;
+                        const image    = isLive ? (p.avatar_url || p.cover_image_url) : p.image;
+                        const online   = isLive ? p.is_online : p.online;
+                        const badge    = isLive ? (p.tier || 'Verified') : p.badge;
+                        const href     = isLive ? `/providers/${p.user_id || p.id}` : `/providers/${p.id}`;
+                        const trust    = isLive ? (p.trust_score || 0) : null;
+                        return (
+                            <Link key={p.id || i} to={href}
+                                className="rounded-xl overflow-hidden block group"
+                                style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', textDecoration: 'none', animation: `fadeInUp 0.45s cubic-bezier(0.19,1,0.22,1) ${i * 0.06}s both`, transition: 'transform 0.24s cubic-bezier(0.25,1,0.5,1), box-shadow 0.24s cubic-bezier(0.25,1,0.5,1), border-color 0.24s', willChange: 'transform' }}
+                                onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-3px)', e.currentTarget.style.boxShadow = 'var(--shadow-card-hover)', e.currentTarget.style.borderColor = 'var(--color-border-strong)')}
+                                onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)',    e.currentTarget.style.boxShadow = 'none',                     e.currentTarget.style.borderColor = 'var(--color-border)')}>
+                                <div className="relative overflow-hidden" style={{ height: 100, backgroundColor: 'var(--color-surface-high)' }}>
+                                    {image ? (
+                                        <img src={image} alt={name}
+                                            className="w-full h-full object-cover transition-all duration-700"
+                                            style={{ filter: 'grayscale(0.35)' }}
+                                            onMouseEnter={e => (e.currentTarget.style.filter = 'grayscale(0)',    e.currentTarget.style.transform = 'scale(1.05)')}
+                                            onMouseLeave={e => (e.currentTarget.style.filter = 'grayscale(0.35)', e.currentTarget.style.transform = 'scale(1)')} />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center">
+                                            <span style={{ fontSize: 28, fontWeight: 900, color: 'var(--color-border-strong)', letterSpacing: '-0.04em' }}>
+                                                {name?.charAt(0)?.toUpperCase()}
+                                            </span>
+                                        </div>
+                                    )}
+                                    <div className="absolute inset-0" style={{ background: 'linear-gradient(to top,rgba(0,0,0,0.6) 0%,transparent 55%)' }} />
+                                    <span className="absolute top-1.5 left-1.5 text-[9px] font-bold text-white px-1.5 py-0.5 rounded"
+                                        style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                        {badge}
+                                    </span>
+                                    {online && <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: 'var(--color-success)' }} />}
+                                    {trust > 0 && (
+                                        <span className="absolute bottom-1.5 right-1.5 text-[9px] font-bold px-1 py-0.5 rounded"
+                                            style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', color: '#22c55e' }}>
+                                            {trust}pts
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="p-2.5">
+                                    <div className="text-[11px] font-bold mb-0.5 truncate" style={{ color: 'var(--color-primary)', letterSpacing: '-0.02em' }}>{name}</div>
+                                    <div className="text-[10px] mb-1.5 truncate" style={{ color: 'var(--color-text-muted)', textTransform: 'capitalize' }}>{role?.replace(/_/g, ' ')}</div>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-1">
+                                            <Star style={{ width: 9, height: 9, fill: rating >= 4 ? '#f59e0b' : 'var(--color-text-subtle)', color: rating >= 4 ? '#f59e0b' : 'var(--color-text-subtle)' }} />
+                                            <span className="text-[10px] font-semibold" style={{ color: 'var(--color-text)' }}>{rating || '—'}</span>
+                                            {reviews > 0 && <span className="text-[9px]" style={{ color: 'var(--color-text-subtle)' }}>({reviews})</span>}
+                                        </div>
+                                        {online ? (
+                                            <span className="text-[9px] font-semibold" style={{ color: '#22c55e' }}>Available</span>
+                                        ) : (
+                                            <span className="text-[9px]" style={{ color: 'var(--color-text-subtle)' }}>Offline</span>
+                                        )}
                                     </div>
                                 </div>
-                            </div>
-                        </Link>
-                    ))}
+                            </Link>
+                        );
+                    })}
                 </div>
             </section>
 
