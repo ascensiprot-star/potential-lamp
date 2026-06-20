@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import {
     LayoutDashboard, Users, Building2, CalendarDays, Settings,
     BarChart3, Shield, Bell, FileText, Tags, CreditCard,
-    Activity, FileBarChart, Brain, Wrench, Menu, X, Home, Zap
+    Activity, FileBarChart, Brain, Wrench, Menu, X, Home, Zap, Eye
 } from 'lucide-react';
 
 const BASE = '/x7k9m2q4p8w1n5v3r6t0y/admin';

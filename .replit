@@ -1,0 +1,55 @@
+modules = ["nodejs-20", "web"]
+[agent]
+expertMode = true
+stack = "BEST_EFFORT_FALLBACK"
+
+[nix]
+channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
+TRUST_PASSPORT_SECRET_VAL = "9534b7e41965f0cc473b9f91eee3b7826ec447a9a6a5c545713bebe4bb59a3128276d48f61110a9636f37c6c779203a6d5772125a749b3006064af30e27283c7"
+SIMON_SYSTEM_TOKEN_VAL = "3e6eb4823f31a78890afffd949de250624edec6d3a80e2642b15c11d5f69a40f"
+MFA_ENCRYPTION_KEY_VAL = "bccb485a778382ca8685acf6e05ee8612de78a6076e2a47a798b7cd69e6770d2"
+TRUST_PASSPORT_SECRET = "7e3fed5d23ece64832b626a0bf180aed6dc830d62a0c65bf03b456870d4b41561ba5c8dc0de43f35836b5f5197d2bffcedb927fb4e4e13d9bbcc34043e97c4ba"
+SIMON_SYSTEM_TOKEN = "bd0c4640222c364f12900c2477d4b0bc109b955411fdde2178dcb6d4499b54a1"
+MFA_ENCRYPTION_KEY = "d2250b75543a15b1e3ff4007eb3558179ed78422890ef5b98e2cdeb9f1febb12"
+SMTP_HOST = "smtp.gmail.com"
+SMTP_PORT = "587"
+SMTP_USER = "noreply@truvornex.com"
+SMTP_PASS = "placeholder_smtp_pass"
+OPENROUTER_API_KEY = "placeholder_openrouter_key"
+NODE_ENV = "development"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[ports]]
+localPort = 5000
+externalPort = 5000
+
+[[ports]]
+localPort = 24678
+externalPort = 3000
